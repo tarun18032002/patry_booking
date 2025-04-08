@@ -1,17 +1,44 @@
 from rest_framework import serializers
-from .models import AdminProfile,Organizer,Party,Payment,Review,Venue
+from .models import User,Party,Payment,Review,Venue
+from rest_framework.authtoken.models import Token
 
-class adminSerializers(serializers.ModelSerializer):
+class UserSerilizer(serializers.ModelSerializer):
     class Meta:
-        model = AdminProfile
-        fields = '__all__'
+        model = User
+        fields = ['id','username','email','first_name','last_name','role']
+        read_only_fields = ['role']
 
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True,required=True,style={'input_type':'password'})
+    password_confirm = serializers.CharField(write_only=True,required = True,style={'input_type':'password'})
 
-class OrganizerSerializers(serializers.ModelSerializer):
     class Meta:
-        model = Organizer
-        fields = '__all__'
+        model = User
+        fields = ['username','email','password','password_confirm','first_name','last_name','role']
 
+    def validate(self, attrs):
+        if attrs['password'] != attrs.pop('password_confirm'):
+            raise serializers.ValidationError({'password':"Password fields didn't match."})
+    
+        return attrs
+
+    def create(self,validated_data):
+        user = User.objects.create_user(
+            username= validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            role=validated_data.get('role', 'user')
+        )
+        return user
+    
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role',  'is_active']
+        
 class PartySerializers(serializers.ModelSerializer):
     class Meta:
         model = Party
@@ -27,7 +54,7 @@ class ReviewSerializers(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
-class VenuewSerializers(serializers.ModelSerializer):
+class VenueSerializers(serializers.ModelSerializer):
     class Meta:
         model = Venue
         fields = '__all__'

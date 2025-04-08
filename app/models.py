@@ -1,30 +1,56 @@
+from django.contrib.auth.models import AbstractUser,BaseUserManager
 from django.db import models
-from django.contrib.auth.models import User
 import uuid
 
-# Organizer Model
-class Organizer(models.Model):
-    organizer_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="organizer")
-    phone = models.CharField(max_length=15)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.user.username
+class UserManager(BaseUserManager):
+    def create_user(self,email,password=None,**extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        user = self.model(email=email,**extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
     
-# Admin Model (Optional if you need separate roles)
-class AdminProfile(models.Model):
-    admin_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="admin_profile")
-    role = models.CharField(max_length=50, default="Admin")
+    def create_superuser(self,email,password=None,**extra_fields):
+        extra_fields.setdefault('is_staff',True)
+        extra_fields.setdefault('is_superuser',True)
+        extra_fields.setdefault('role','admin')
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(email,password,**extra_fields)
+    
+class User(AbstractUser):
+    Role_choices =(
+        ('user','User'),
+        ('organizer','Organizer'),
+        ('admin','Admin'),
+    )
+
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150,unique=True)
+    role = models.CharField(max_length=10,choices=Role_choices,default='user')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    objects = UserManager()
 
     def __str__(self):
-        return self.user.username
+        return self.email
+    
+
 
 # Venue Model
 class Venue(models.Model):
     venue_id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
-    organizer = models.ForeignKey(Organizer, on_delete=models.CASCADE, related_name="venues")
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="venues")
     name = models.CharField(max_length=255)
     location = models.TextField()
     capacity = models.IntegerField()

@@ -8,9 +8,50 @@ This project is an **online party booking system** that allows users to book ven
 ## 🛠 Features & Functions  
 
 ### 1️⃣ User Authentication & Management  
-- **User Registration** (`POST /api/users/register`)  
-- **User Login** (`POST /api/users/login`)  
-- **User Profile Update** (`PUT /api/users/update`)  
+#### Authentication
+- `POST /api/token/`: Get JWT access and refresh tokens
+- `POST /api/token/refresh/`: Refresh JWT token
+
+#### User Management
+- `POST /api/register/`: Register a new user
+- `GET /api/users/`: List users (admin sees all, others see only themselves)
+- `GET /api/me/`: Get current user data
+- `GET /api/users/{id}/`: Get specific user (if owner or admin)
+- `PUT /api/users/{id}/`: Update user (if owner or admin)
+- `DELETE /api/users/{id}/`: Delete user (admin only)
+
+## Usage Examples
+
+### Register a new user
+```
+POST /api/register/
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "securepassword",
+    "password_confirm": "securepassword",
+    "first_name": "John",
+    "last_name": "Doe",
+    "role": "user",
+    "bio": "Regular user"
+}
+```
+
+### Login to get JWT tokens
+```
+POST /api/token/
+{
+    "email": "john@example.com",
+    "password": "securepassword"
+}
+```
+
+### Access protected resources
+Include the access token in the Authorization header:
+```
+GET /api/users/
+Authorization: Bearer <your_access_token>
+```
 
 ### 2️⃣ Venue Management (For Organizers)  
 - **Add Venue** (`POST /api/venues/add`)  
