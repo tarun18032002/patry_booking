@@ -15,6 +15,14 @@ class IsOwnerorAdmin(permissions.BasePermission):
         # User/Organizers can only access their own data
         return obj.id == request.user.id
     
+class IsOrganizer(permissions.BasePermission):
+    """
+    Custom permission to only allow organizers to acces the view.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role == 'organizer')
+    
 
 class IsAdminUser(permissions.BasePermission):
     """

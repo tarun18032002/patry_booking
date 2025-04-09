@@ -1,71 +1,60 @@
-from rest_framework import status
+from rest_framework.viewsets import ViewSet
+from rest_framework.permissions import IsAuthenticated,AllowAny
+from .Custompermissions import IsOrganizer
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import ListAPIView, RetrieveAPIView
-from rest_framework.decorators import api_view, permission_classes
-from .models import Venue,User
+from rest_framework import status
+from .models import Venue
 from .serializers import VenueSerializers
+from django.shortcuts import get_object_or_404
 
-# ✅ Add a Venue
-class AddVenueView(APIView):
-    permission_classes = [IsAuthenticated]
+class VenueCreate(ViewSet):
+    permission_classes = [IsAuthenticated,IsOrganizer]
+    
+    def create(self,request):
+        serilaizers = VenueSerializers(data= request.data,context={'request': request})
+        if serilaizers.is_valid():
+            serilaizers.save(organizer=request.data)
+            return Response(serilaizers.data, status=status.HTTP_201_CREATED)
+        return Response(serilaizers.errors,status=status.HTTP_400_BAD_REQUEST)
 
-    def post(self, request):
+class VenueList(ViewSet):
+ 
+    permission_classes = [IsAuthenticated,AllowAny]
+    def list(self,request):
+        if request.user.role == 'organizer':
+            venue = Venue.objects.filter(organizer = request.user)
+        else:
+            venue = Venue.objects.all()
+        serilizers = VenueSerializers(venue,many=True)
+        return Response(serilizers.data,status=status.HTTP_200_OK)
+    
+class VenueDetail(ViewSet):
+    permission_classes = [IsAuthenticated,IsOrganizer]
+
+    def retrieve(self,request,pk=None):
         try:
-            organizer = User.objects.get(user=request.user)
-            data = request.data.copy()
-            data["organizer"] = organizer.pk  # Set the organizer ID
-            serializer = VenueSerializers(data=data)
-
-            if serializer.is_valid():
-                serializer.save()
-                return Response({"message": "Venue added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except User.DoesNotExist:
-            return Response({"error": "You must be an organizer to add a venue"}, status=status.HTTP_403_FORBIDDEN)
-
-
-# ✅ Update Venue
-class UpdateVenueView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, venue_id):
-        try:
-            venue = Venue.objects.get(pk=venue_id, organizer__user=request.user)
-            serializer = VenueSerializers(venue, data=request.data, partial=True)
-            
-            if serializer.is_valid():
-                serializer.save()
-                return Response({"message": "Venue updated successfully", "data": serializer.data}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            venue = Venue.objects.get(pk=pk, organizer=request.user)
+            serializer = VenueSerializers(venue)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Venue.DoesNotExist:
-            return Response({"error": "Venue not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'Venue not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
-# ✅ Delete Venue
-class DeleteVenueView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, venue_id):
+    def update(self,request,pk=None):
         try:
-            venue = Venue.objects.get(pk=venue_id, organizer__user=request.user)
+            venue = Venue.objects.get(pk=pk,organizer=request.user)
+            serilizers = VenueSerializers(venue,data=request.data,context={'request': request})
+            if serilizers.is_valid():
+                serilizers.save()
+                return Response(serilizers.data,status=status.HTTP_200_OK)
+            return Response(serilizers.errors,status=status.HTTP_400_BAD_REQUEST)
+        except Venue.DoesNotExist:
+            return Response({'message':'Venue is not updated!'},status=status.HTTP_404_NOT_FOUND)
+    
+    def destroy(self,request,pk=None):
+        try:
+            venue = Venue.objects.get(pk=pk,organizer= request.user)
             venue.delete()
-            return Response({"message": "Venue deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message':'Venue is deleted!'},status=status.HTTP_204_NO_CONTENT)
         except Venue.DoesNotExist:
-            return Response({"error": "Venue not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
-
-
-# ✅ List All Venues (Anyone can view)
-class ListVenuesView(ListAPIView):
-    queryset = Venue.objects.all()
-    serializer_class = VenueSerializers
-
-
-# ✅ Get Venue Details
-class GetVenueDetailsView(RetrieveAPIView):
-    queryset = Venue.objects.all()
-    serializer_class = VenueSerializers
-    lookup_field = "venue_id"
+            return Response({'message':'Venue is not deleted!'},status=status.HTTP_404_NOT_FOUND)
+        

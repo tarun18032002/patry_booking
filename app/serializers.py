@@ -58,3 +58,15 @@ class VenueSerializers(serializers.ModelSerializer):
     class Meta:
         model = Venue
         fields = '__all__'
+        read_only_fields = ['organizer', 'venue_id', 'created_at'] 
+
+    def create(self,validated_data):
+        request = self.context.get('request')
+        print(request.user)
+        validated_data['organizer']= request.user
+        return super().create(validated_data)
+    
+    def update(self,instance,validated_data):
+        request = self.context.get('request')
+        validated_data['oragnizer']=request.user
+        return super().update(instance,validated_data)
