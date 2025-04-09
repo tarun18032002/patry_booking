@@ -11,10 +11,10 @@ urlpatterns = [
     path('', include(router.urls)),
 
     # Venue routes
-    path('venues/list/', VenueList.as_view({'get': 'list'}), name='listvenues'),
-    path('venues/create/',VenueCreate.as_view({'post': 'create'}), name='createvenues'),
+    path('venues/', VenueList.as_view({'get': 'list'}), name='listvenues'),
+    path('venues/add/',VenueCreate.as_view({'post': 'create'}), name='createvenues'),
     path('venues/update/<uuid:pk>/', VenueDetail.as_view({'put': 'update'}), name='updatevenues'),
-    path('venues/retrieve/<uuid:pk>/', VenueDetail.as_view({'get': 'retrieve'}), name='retrievevenues'),
+    path('venues/<uuid:pk>/', VenueDetail.as_view({'get': 'retrieve'}), name='retrievevenues'),
     path('venues/delete/<uuid:pk>/', VenueDetail.as_view({'delete': 'destroy'}), name='deletevenues'),
 
     # Auth routes

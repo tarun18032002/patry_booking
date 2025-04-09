@@ -54,7 +54,16 @@ Authorization: Bearer <your_access_token>
 ```
 
 ### 2️⃣ Venue Management (For Organizers)  
-- **Add Venue** (`POST /api/venues/add`)  
+- **Add Venue** (`POST /api/venues/add`) 
+    ```ex: {
+    "name": "Party_12",
+    "location": "Bangalore",
+    "capacity": 15,
+    "price_per_hour": "1500.00",
+    "description": "DJ",
+    "image_url": null
+    }```
+    
 - **Edit Venue Details** (`PUT /api/venues/update/{venue_id}`)  
 - **Delete Venue** (`DELETE /api/venues/delete/{venue_id}`)  
 - **List All Venues** (`GET /api/venues`)  
